@@ -1,8 +1,8 @@
 # Electron Fusion
 
-A laconic solution for synchronizing data between the main and renderer processes of Electron.
+A laconic solution for synchronizing data between the main and renderer processes of Electron
 
-Powered by JS Proxy
+Powered by JS Proxy. Designed for TypeScript developers
 
 ## Performance
 
