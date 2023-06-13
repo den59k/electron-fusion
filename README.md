@@ -10,7 +10,13 @@ This package was inspired by the reactivity of vue. Objects stored in memory are
 
 The package sends to the `ipcRenderer` only those data that have been changed, trying to minimize the information
 
-Also, all sync commands are not sent immediately to ipcMain, but are collected in batching and sent to nextTick
+Also, all sync commands are not sent immediately to `ipcMain`, but are collected in batching and sent to nextTick
+
+## Installation
+
+```
+yarn add electron-fusion
+```
 
 ## Structure
 

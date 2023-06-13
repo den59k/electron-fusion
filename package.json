@@ -1,8 +1,14 @@
 {
   "name": "electron-fusion",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
+  "description": "Tool for fusing data between the main and renderer processes",
+  "author": "den59k",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/den59k/electron-fusion.git"
+  },
   "scripts": {
     "build": "tsc && vite build",
     "preview": "vite preview",
