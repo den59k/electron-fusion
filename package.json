@@ -9,6 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/den59k/electron-fusion.git"
   },
+  "keywords": [ "electron", "sync", "proxy" ],
   "scripts": {
     "build": "tsc && vite build",
     "preview": "vite preview",
