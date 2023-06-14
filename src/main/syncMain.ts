@@ -27,7 +27,7 @@ function* getObjectByBaseKey (baseKey: BaseKey) {
   }
 }
 
-const setCommands = [ "set", "_set", "push", "unshift" ]
+const setCommands = [ "set", "_set", "push", "unshift", "splice" ]
 let flagNextTick = false
 let toSend: [ BaseKey, string, ...any ][] = []
 export const send = (baseKey: BaseKey, command: string, ...args: any) => {
@@ -35,6 +35,7 @@ export const send = (baseKey: BaseKey, command: string, ...args: any) => {
   for (let item of toSend) {
     if (setCommands.includes(item[1])) {
       for (let i = 2; i < item.length; i++) {
+        if (typeof item[i] !== "object" || item[i] === null) continue
         for (let affected of getObjectByBaseKey(baseKey)) {
           if (item[i] === affected) return
         }

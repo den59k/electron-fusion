@@ -162,5 +162,28 @@ describe("test", async () => {
     expect(dataRenderer.array[0].length).toBe(2)
     expect(dataRenderer).toEqual(toJS(_data))
   })
+
+
+  it("inner array test", async () => {
+    class Data {
+      array1: any = []
+      array2: any = []
+    }
+  
+    const _data = syncMain(["test7"], new Data())
+    const dataRenderer = syncRenderer<Data>("test7")
+
+    _data.array1.push("one")
+    _data.array2.push("two")
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    _data.array1.length = 0
+    _data.array2.length = 0
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
 })
 
