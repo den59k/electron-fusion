@@ -32,7 +32,6 @@ const onSyncEvent = (e, arr) => {
     if (!item)
       continue;
     let obj = item;
-    const key = baseKey[baseKey.length - 1];
     for (let i = 1; i < baseKey.length - 1; i++) {
       if (typeof obj["get"] === "function") {
         obj = obj.get(baseKey[i]);
@@ -40,6 +39,7 @@ const onSyncEvent = (e, arr) => {
       }
       obj = obj[baseKey[i]];
     }
+    const key = baseKey[baseKey.length - 1];
     if (command === "_set") {
       obj[key] = args[0];
     }

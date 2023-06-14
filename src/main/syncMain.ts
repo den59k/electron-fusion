@@ -14,9 +14,34 @@ ipcMain.on("sync", (e, channel: string) => {
   e.returnValue = objects.get(channel) || null
 })
 
+function* getObjectByBaseKey (baseKey: BaseKey) {
+  let obj: any = objects.get(baseKey[0])
+  for (let i = 1; i < baseKey.length; i++) {
+    if (typeof obj["get"] === "function") {
+      obj = obj.get(baseKey[i])
+      yield obj
+      continue
+    }
+    obj = obj[baseKey[i]]
+    yield obj
+  }
+}
+
+const setCommands = [ "set", "_set", "push", "unshift" ]
 let flagNextTick = false
 let toSend: [ BaseKey, string, ...any ][] = []
 export const send = (baseKey: BaseKey, command: string, ...args: any) => {
+
+  for (let item of toSend) {
+    if (setCommands.includes(item[1])) {
+      for (let i = 2; i < item.length; i++) {
+        for (let affected of getObjectByBaseKey(baseKey)) {
+          if (item[i] === affected) return
+        }
+      }
+    }
+  }
+
   toSend.push([ baseKey, command, ...args ])
   if (!flagNextTick) {
     process.nextTick(sendOnNextTick)

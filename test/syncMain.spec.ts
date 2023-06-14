@@ -71,13 +71,19 @@ describe("test", async () => {
     expect(dataRenderer).toEqual(toJS(_data))
     
     _data.map.get("key").key = "value2"
+    _data.map.set("key2", { key: "value" })
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
 
     _data.map.delete("key")
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
+    expect(dataRenderer.map.size).toBe(1)
+
+    _data.map.clear()
+    await new Promise(res => nextTick(res))
     expect(dataRenderer.map.size).toBe(0)
+
   })
 
   it("array test", async () => {
@@ -113,6 +119,47 @@ describe("test", async () => {
     array._filter((item) => item > 40)
     expect(_data.array).toEqual([ 50 ])
     await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
+
+  it("inner map test", async () => {
+    class Data {
+      map = new Map<string, any>()
+    }
+  
+    const _data = syncMain(["test5"], new Data())
+    const dataRenderer = syncRenderer<Data>("test5")
+
+    _data.map.set("array", [])
+    _data.map.get("array").push({ item: "one" })
+
+    await new Promise(res => nextTick(res))
+
+    expect(dataRenderer.map.get("array").length).toBe(1)
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
+
+  it("inner array test", async () => {
+    class Data {
+      array: any[] = []
+    }
+  
+    const _data = syncMain(["test6"], new Data())
+    const dataRenderer = syncRenderer<Data>("test6")
+
+    _data.array.push([])
+    _data.array[0].push({ item: "one" })
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer.array[0].length).toBe(1)
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    _data.array.push([])
+    _data.array[1].push({ item: "one" })
+    _data.array[0].push({ item: "two" })
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer.array[0].length).toBe(2)
     expect(dataRenderer).toEqual(toJS(_data))
   })
 })
