@@ -185,5 +185,26 @@ describe("test", async () => {
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
   })
+
+  it("delete object props", async () => {
+    class Data {
+      obj: any = {}
+    }
+  
+    const _data = syncMain(["test8"], new Data())
+    const dataRenderer = syncRenderer<Data>("test8")
+
+    _data.obj.test1 = "value1"
+    _data.obj.test2 = "value2"
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    _data.obj.test1 = "value1"
+    delete _data.obj.test2
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
 })
 

@@ -34,21 +34,18 @@ const onSyncEvent = (e, arr) => {
     if (!item)
       continue;
     let obj = item;
-    for (let i = 1; i < baseKey.length - 1; i++) {
+    for (let i = 1; i < baseKey.length; i++) {
       if (typeof obj["get"] === "function") {
         obj = obj.get(baseKey[i]);
         continue;
       }
       obj = obj[baseKey[i]];
     }
-    const key = baseKey[baseKey.length - 1];
     if (command === "_set") {
-      obj[key] = args[0];
+      obj[args[0]] = args[1];
     }
-    if (obj instanceof Map) {
-      obj = obj.get(key);
-    } else {
-      obj = obj[key];
+    if (command === "_delete") {
+      delete obj[args[0]];
     }
     if (["push", "unshift", "pop", "shift", "splice", "set", "add", "delete", "clear"].includes(command)) {
       obj[command](...args);

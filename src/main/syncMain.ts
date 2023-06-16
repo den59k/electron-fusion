@@ -27,18 +27,16 @@ function* getObjectByBaseKey (baseKey: BaseKey) {
   }
 }
 
-const setCommands = [ "set", "_set", "push", "unshift", "splice" ]
+const setCommands = [ "set", "_set", "push", "unshift", "splice", "add" ]
 let flagNextTick = false
 let toSend: [ BaseKey, string, ...any ][] = []
 export const send = (baseKey: BaseKey, command: string, ...args: any) => {
-
   for (let item of toSend) {
-    if (setCommands.includes(item[1])) {
-      for (let i = 2; i < item.length; i++) {
-        if (typeof item[i] !== "object" || item[i] === null) continue
-        for (let affected of getObjectByBaseKey(baseKey)) {
-          if (item[i] === affected) return
-        }
+    if (!setCommands.includes(item[1])) continue
+    for (let i = 2; i < item.length; i++) {
+      if (typeof item[i] !== "object" || item[i] === null) continue
+      for (let affected of getObjectByBaseKey(baseKey)) {
+        if (item[i] === affected) return
       }
     }
   }
@@ -108,13 +106,17 @@ export const syncMain = <T extends object>(baseKey: BaseKey, obj: T): T => {
 
       return syncMain([ ...baseKey, prop ], value)
     },
+    deleteProperty(target, prop: string) {
+      if (!Reflect.deleteProperty(target, prop)) return false
+      send([ ...baseKey ], "_delete", prop)
+      return true
+    },
     set(target, prop: string, value, receiver) {
       const _value = toRaw(value)
-      const success = Reflect.set(target, prop, _value, receiver)
-      if (success) {
-        send([ ...baseKey, prop ], "_set", _value)
-      }
-      return success
+      if (!Reflect.set(target, prop, _value, receiver)) return false
+
+      send([ ...baseKey ], "_set", prop, _value)
+      return true
     }
   });
 }

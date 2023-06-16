@@ -102,19 +102,19 @@ function* getObjectByBaseKey(baseKey) {
     yield obj;
   }
 }
-const setCommands = ["set", "_set", "push", "unshift", "splice"];
+const setCommands = ["set", "_set", "push", "unshift", "splice", "add"];
 let flagNextTick = false;
 let toSend = [];
 const send = (baseKey, command, ...args) => {
   for (let item of toSend) {
-    if (setCommands.includes(item[1])) {
-      for (let i = 2; i < item.length; i++) {
-        if (typeof item[i] !== "object" || item[i] === null)
-          continue;
-        for (let affected of getObjectByBaseKey(baseKey)) {
-          if (item[i] === affected)
-            return;
-        }
+    if (!setCommands.includes(item[1]))
+      continue;
+    for (let i = 2; i < item.length; i++) {
+      if (typeof item[i] !== "object" || item[i] === null)
+        continue;
+      for (let affected of getObjectByBaseKey(baseKey)) {
+        if (item[i] === affected)
+          return;
       }
     }
   }
@@ -180,13 +180,18 @@ const syncMain = (baseKey, obj) => {
       }
       return syncMain([...baseKey, prop], value);
     },
+    deleteProperty(target, prop) {
+      if (!Reflect.deleteProperty(target, prop))
+        return false;
+      send([...baseKey], "_delete", prop);
+      return true;
+    },
     set(target, prop, value, receiver) {
       const _value = toRaw(value);
-      const success = Reflect.set(target, prop, _value, receiver);
-      if (success) {
-        send([...baseKey, prop], "_set", _value);
-      }
-      return success;
+      if (!Reflect.set(target, prop, _value, receiver))
+        return false;
+      send([...baseKey], "_set", prop, _value);
+      return true;
     }
   });
 };
