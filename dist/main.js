@@ -82,6 +82,18 @@ const applyArrayMethods = (target, prop, baseKey) => {
     return target;
   };
 };
+const mapArrayMethods = (baseKey, target, prop) => {
+  return (...args) => {
+    const _args = args.map(toRaw);
+    if (prop === "remove" && Array.isArray(target)) {
+      const index = target.indexOf(_args[0]);
+      if (index < 0)
+        return;
+      target.splice(index, 1);
+      send(baseKey, "splice", index, 1);
+    }
+  };
+};
 const objects = /* @__PURE__ */ new Map();
 const subs = /* @__PURE__ */ new Map();
 ipcMain.on("sync", (e, channel) => {
@@ -144,6 +156,7 @@ const toRaw = (obj) => {
     return obj;
   return obj.__isReactive__ ? obj.__raw__ : obj;
 };
+const mappedMethods = ["add", "set", "push", "unshift", "splice", "clear", "delete", "remove"];
 const mapMethod = (baseKey, target, prop) => {
   return (...args) => {
     const _args = args.map(toRaw);
@@ -165,15 +178,18 @@ const syncMain = (baseKey, obj) => {
         return baseKey;
       if (prop === "__isReactive__")
         return true;
-      if (Array.isArray(target) && ["sort", "_filter"].includes(prop)) {
+      if (["sort", "_filter"].includes(prop) && Array.isArray(target)) {
         return applyArrayMethods(target, prop, baseKey);
+      }
+      if (["remove"].includes(prop) && Array.isArray(target)) {
+        return mapArrayMethods(baseKey, target, prop);
       }
       const value = target[prop];
       if (typeof value === "function") {
-        if (["add", "set", "push", "unshift", "splice", "clear", "delete"].includes(prop)) {
+        if (mappedMethods.includes(prop)) {
           return mapMethod(baseKey, target, prop);
         }
-        if (target instanceof Map && ["get"].includes(prop)) {
+        if (target instanceof Map && prop === "get") {
           return (key) => syncMain([...baseKey, key], target.get(key));
         }
         return value.bind(target);

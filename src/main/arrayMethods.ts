@@ -1,4 +1,4 @@
-import { BaseKey, send } from "./syncMain"
+import { BaseKey, send, toRaw } from "./syncMain"
 import { applyIndexes, isSorted } from "../utils/applyIndexes"
 
 export const applyArrayMethods = (target: Array<any>, prop: "sort" | "_filter", baseKey: BaseKey) => {
@@ -22,5 +22,18 @@ export const applyArrayMethods = (target: Array<any>, prop: "sort" | "_filter", 
     send(baseKey, prop, [ ...indexes ])
     applyIndexes(target, indexes)
     return target
+  }
+}
+
+
+export const mapArrayMethods = (baseKey: BaseKey, target: any, prop: string) => {
+  return (...args: any) => {
+    const _args = args.map(toRaw)
+    if (prop === "remove" && Array.isArray(target)) {
+      const index = target.indexOf(_args[0])
+      if (index < 0) return
+      target.splice(index, 1)
+      send(baseKey, "splice", index, 1)
+    } 
   }
 }

@@ -1,5 +1,5 @@
 import { ipcMain, webContents } from 'electron'
-import { applyArrayMethods } from './arrayMethods'
+import { applyArrayMethods, mapArrayMethods } from './arrayMethods'
 export { proxyMethods } from './proxyMethods'
 
 const objects = new Map<string | number, object>()
@@ -69,6 +69,7 @@ export const toRaw = (obj: any) => {
   return obj.__isReactive__? obj.__raw__: obj
 }
 
+const mappedMethods = [ "add", "set", "push", "unshift", "splice", "clear", "delete", "remove" ]
 const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   return (...args: any) => {
     const _args = args.map(toRaw)
@@ -89,16 +90,20 @@ export const syncMain = <T extends object>(baseKey: BaseKey, obj: T): T => {
       if (prop === "__basekey__") return baseKey
       if (prop === "__isReactive__") return true
 
-      if (Array.isArray(target) && [ "sort", "_filter" ].includes(prop)) {
+      if ([ "sort", "_filter" ].includes(prop) && Array.isArray(target)) {
         return applyArrayMethods(target, prop as "sort" | "_filter", baseKey)
+      }
+
+      if ([ "remove" ].includes(prop) && Array.isArray(target)) {
+        return mapArrayMethods(baseKey, target, prop)
       }
 
       const value = (target as any)[prop]
       if (typeof value === "function") {
-        if ([ "add", "set", "push", "unshift", "splice", "clear", "delete" ].includes(prop)) {
+        if (mappedMethods.includes(prop)) {
           return mapMethod(baseKey, target, prop)
         }
-        if (target instanceof Map && [ "get" ].includes(prop)) {
+        if (target instanceof Map && prop === "get") {
           return (key: string) => syncMain([ ...baseKey, key ], target.get(key))
         }
         return value.bind(target)

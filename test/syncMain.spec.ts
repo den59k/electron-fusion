@@ -206,5 +206,39 @@ describe("test", async () => {
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
   })
+
+  it("arrayFusion methods", async () => {
+    class Data {
+      numbers: Array<number> = []
+      objects: Array<any> = []
+    }
+  
+    const _data = syncMain(["test9"], new Data())
+    const dataRenderer = syncRenderer<Data>("test9")
+
+    _data.numbers.push(1, 2, 3)
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    const _numbers = _data.numbers as FusionArray<number>
+    _numbers.remove(2)
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    const _objects = _data.objects as FusionArray<any>
+    const firstItem = { test: "test" }
+    _objects.push(firstItem)
+    _objects.push(2)
+    _objects.push(3)
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    _objects.remove(firstItem)
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
 })
 
