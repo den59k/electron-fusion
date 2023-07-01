@@ -17,6 +17,10 @@ const createTestService = () => {
       return this.counter
     }
 
+    getNullResult() {
+      return null
+    }
+
     async request() {
       await new Promise(res => setTimeout(res, 100))
       return "success"
@@ -30,7 +34,7 @@ it("proxy Methods", () => {
   const testService = createTestService()
   const increment = vi.spyOn(testService, "increment")
 
-  const bridge = proxy("test", {} as typeof testService, ["increment"], [], ["getResult"])
+  const bridge = proxy("test", {} as typeof testService, ["increment"], [], ["getResult", "getNullResult"])
 
   bridge.increment()
   expect(increment).toHaveBeenCalledTimes(1)
@@ -42,7 +46,7 @@ it("proxy Methods", () => {
   const increment = vi.spyOn(testService, "increment")
   const getResult = vi.spyOn(testService, "getResult")
 
-  const bridge = proxy("test", {} as typeof testService, ["increment"], [], ["getResult"])
+  const bridge = proxy("test", {} as typeof testService, ["increment"], [], ["getResult", "getNullResult"])
   bridge.increment()
   bridge.increment()
 
@@ -51,6 +55,8 @@ it("proxy Methods", () => {
   const result = bridge.getResult()
   expect(getResult).toHaveBeenCalledTimes(1)
   expect(result).toBe(2)
+
+  expect(bridge.getNullResult()).toBeNull()
 })
 
 it("async methods", async () => {
