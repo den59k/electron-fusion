@@ -4,12 +4,12 @@ type KeyOfType<T, V> = keyof {
   [P in keyof T as T[P] extends V? P: never]: any
 }
 
-export const proxy = <T, M extends KeyOfType<T, Function>, A extends KeyOfType<T, (...args: any) => Promise<any>>, S extends KeyOfType<T, (...args: any) => {}>>(
+export const proxy = <T, M extends KeyOfType<T, Function> = never, A extends KeyOfType<T, (...args: any) => Promise<any>> = never, S extends KeyOfType<T, (...args: any) => object | number | string> = never>(
   channel: string, 
   dummy: T,
-  methods: M[], 
-  asyncMethods: A[],
-  syncMethods: S[]
+  methods: M[] = [], 
+  asyncMethods: A[] = [],
+  syncMethods: S[] = []
 ): Pick<T, M | A | S> => {
     
   const obj: any = {}

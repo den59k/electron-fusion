@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const electron = require("electron");
-const proxy = (channel, dummy, methods, asyncMethods, syncMethods) => {
+const proxy = (channel, dummy, methods = [], asyncMethods = [], syncMethods = []) => {
   const obj = {};
   for (let method of methods) {
     obj[method] = (...args) => electron.ipcRenderer.send("call", channel, method, ...args);

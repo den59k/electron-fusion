@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron";
-const proxy = (channel, dummy, methods, asyncMethods, syncMethods) => {
+const proxy = (channel, dummy, methods = [], asyncMethods = [], syncMethods = []) => {
   const obj = {};
   for (let method of methods) {
     obj[method] = (...args) => ipcRenderer.send("call", channel, method, ...args);

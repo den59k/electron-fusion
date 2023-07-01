@@ -222,6 +222,7 @@ describe("test", async () => {
 
     const _numbers = _data.numbers as FusionArray<number>
     _numbers.remove(2)
+    _numbers.remove(10)
 
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
