@@ -1,5 +1,6 @@
-import { BaseKey, send, toRaw } from "./syncMain"
+import { toRaw } from "./syncMain"
 import { applyIndexes, isSorted } from "../utils/applyIndexes"
+import { BaseKey, send } from "./send"
 
 export const applyArrayMethods = (target: Array<any>, prop: "sort" | "_filter", baseKey: BaseKey) => {
   const items = target.map((item, index) => [ index, item ] as [ number, string ])
