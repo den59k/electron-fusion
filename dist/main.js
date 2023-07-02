@@ -35,13 +35,14 @@ ipcMain.on("callSync", (e, channel, method, ...args) => {
   }
   e.returnValue = service[method](...args) ?? null;
 });
-const proxyMethods = (service, name) => {
-  services.set(name, service);
-};
-const proxyMethodToWindow = (service, webContents2, name) => {
-  const map = windows.get(name) ?? /* @__PURE__ */ new Map();
+const proxyMethods = (service, channel, webContents2) => {
+  if (!webContents2) {
+    services.set(channel, service);
+    return;
+  }
+  const map = windows.get(channel) ?? /* @__PURE__ */ new Map();
   map.set(webContents2.id, service);
-  windows.set(name, map);
+  windows.set(channel, map);
   webContents2.once("destroyed", () => {
     map.delete(webContents2.id);
   });
@@ -234,7 +235,6 @@ const syncMain = (baseKey, obj) => {
   });
 };
 export {
-  proxyMethodToWindow,
   proxyMethods,
   syncMain,
   toRaw

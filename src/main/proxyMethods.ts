@@ -40,14 +40,22 @@ ipcMain.on("callSync", (e, channel: string, method: string, ...args: any) => {
   e.returnValue = service[method](...args) ?? null
 })
 
-export const proxyMethods = (service: object, name: string) => {
-  services.set(name, service)
-}
+/**
+ * Mark object as receiver methods from renderer
+ * 
+ * @param service Target object
+ * @param channel Must be unique for each `service`, if `webContents` are not provided
+ * @param webContents `WebContents`, from which to handle requests
+ */
+export const proxyMethods = (service: object, channel: string, webContents?: WebContents) => {
+  if (!webContents) {
+    services.set(channel, service)
+    return
+  }
 
-export const proxyMethodToWindow = (service: object, webContents: WebContents, name: string) => {
-  const map = windows.get(name) ?? new Map()
+  const map = windows.get(channel) ?? new Map()
   map.set(webContents.id, service)
-  windows.set(name, map)
+  windows.set(channel, map)
 
   webContents.once("destroyed", () => {
     map.delete(webContents.id)

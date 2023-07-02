@@ -37,13 +37,14 @@ electron.ipcMain.on("callSync", (e, channel, method, ...args) => {
   }
   e.returnValue = service[method](...args) ?? null;
 });
-const proxyMethods = (service, name) => {
-  services.set(name, service);
-};
-const proxyMethodToWindow = (service, webContents, name) => {
-  const map = windows.get(name) ?? /* @__PURE__ */ new Map();
+const proxyMethods = (service, channel, webContents) => {
+  if (!webContents) {
+    services.set(channel, service);
+    return;
+  }
+  const map = windows.get(channel) ?? /* @__PURE__ */ new Map();
   map.set(webContents.id, service);
-  windows.set(name, map);
+  windows.set(channel, map);
   webContents.once("destroyed", () => {
     map.delete(webContents.id);
   });
@@ -235,7 +236,6 @@ const syncMain = (baseKey, obj) => {
     }
   });
 };
-exports.proxyMethodToWindow = proxyMethodToWindow;
 exports.proxyMethods = proxyMethods;
 exports.syncMain = syncMain;
 exports.toRaw = toRaw;

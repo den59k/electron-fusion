@@ -1,17 +1,13 @@
 import { expect, it, vi } from 'vitest'
 import './mocks/electron'
 import { proxy } from '../src/preload'
-import { proxyMethods, proxyMethodToWindow } from '../src/main'
+import { proxyMethods } from '../src/main'
 import { WebContents, webContents } from 'electron'
 
 const createTestService = (webContents?: WebContents, channel?: string) => {
   class TestService {
     constructor(webContents?: WebContents, channel?: string) {
-      if (webContents) {
-        proxyMethodToWindow(this, webContents, channel ?? "test")
-      } else {
-        proxyMethods(this, channel ?? "test")
-      }
+      proxyMethods(this, channel ?? "test", webContents)
     }
     counter = 0
     increment() {
