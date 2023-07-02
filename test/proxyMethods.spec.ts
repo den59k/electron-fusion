@@ -1,12 +1,17 @@
 import { expect, it, vi } from 'vitest'
 import './mocks/electron'
 import { proxy } from '../src/preload'
-import { proxyMethods } from '../src/main'
+import { proxyMethods, proxyMethodToWindow } from '../src/main'
+import { WebContents, webContents } from 'electron'
 
-const createTestService = () => {
+const createTestService = (webContents?: WebContents, channel?: string) => {
   class TestService {
-    constructor() {
-      proxyMethods(this, "test")
+    constructor(webContents?: WebContents, channel?: string) {
+      if (webContents) {
+        proxyMethodToWindow(this, webContents, channel ?? "test")
+      } else {
+        proxyMethods(this, channel ?? "test")
+      }
     }
     counter = 0
     increment() {
@@ -26,7 +31,7 @@ const createTestService = () => {
       return "success"
     }
   }
-  return new TestService()
+  return new TestService(webContents, channel)
 }
 
 it("proxy Methods", () => {
@@ -71,3 +76,15 @@ it("async methods", async () => {
   expect(result).toBe("success")
 })
 
+
+it("proxy Methods to window", () => {
+
+  const testService = createTestService(webContents.fromId(1), "currentTest")
+
+  const increment = vi.spyOn(testService, "increment")
+
+  const bridge = proxy("currentTest", {} as typeof testService, ["increment"], [], ["getResult", "getNullResult"])
+
+  bridge.increment()
+  expect(increment).toHaveBeenCalledTimes(1)
+})

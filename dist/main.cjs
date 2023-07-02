@@ -2,8 +2,19 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const electron = require("electron");
 const services = /* @__PURE__ */ new Map();
-electron.ipcMain.on("call", (e, channel, method, ...args) => {
+const windows = /* @__PURE__ */ new Map();
+const getTarget = (e, channel) => {
+  var _a;
   const service = services.get(channel);
+  if (service)
+    return service;
+  const window = (_a = windows.get(channel)) == null ? void 0 : _a.get(e.sender.id);
+  if (window)
+    return window;
+  return null;
+};
+electron.ipcMain.on("call", (e, channel, method, ...args) => {
+  const service = getTarget(e, channel);
   if (!service) {
     console.warn(`Service ${channel} not registered for method ${method}`);
     return;
@@ -11,14 +22,14 @@ electron.ipcMain.on("call", (e, channel, method, ...args) => {
   service[method](...args);
 });
 electron.ipcMain.handle("callAsync", (e, channel, method, ...args) => {
-  const service = services.get(channel);
+  const service = getTarget(e, channel);
   if (!service) {
     return Promise.reject(`Service ${channel} not registered for method ${method}`);
   }
   return service[method](...args);
 });
 electron.ipcMain.on("callSync", (e, channel, method, ...args) => {
-  const service = services.get(channel);
+  const service = getTarget(e, channel);
   if (!service) {
     console.warn(`Service ${channel} not registered for method ${method}`);
     e.returnValue = null;
@@ -28,6 +39,14 @@ electron.ipcMain.on("callSync", (e, channel, method, ...args) => {
 });
 const proxyMethods = (service, name) => {
   services.set(name, service);
+};
+const proxyMethodToWindow = (service, webContents, name) => {
+  const map = windows.get(name) ?? /* @__PURE__ */ new Map();
+  map.set(webContents.id, service);
+  windows.set(name, map);
+  webContents.once("destroyed", () => {
+    map.delete(webContents.id);
+  });
 };
 const applyIndexes = (arr, indexes) => {
   for (let i = 0; i < indexes.length; i++) {
@@ -63,39 +82,6 @@ const isSorted = (arr) => {
   }
   return true;
 };
-const applyArrayMethods = (target, prop, baseKey) => {
-  const items = target.map((item, index) => [index, item]);
-  if (prop === "sort") {
-    return (sortFunc) => {
-      const indexes = items.sort((a, b) => sortFunc(a[1], b[1])).map((item) => item[0]);
-      if (isSorted(indexes))
-        return target;
-      send(baseKey, prop, [...indexes]);
-      applyIndexes(target, indexes);
-      return target;
-    };
-  }
-  return (filterFunc) => {
-    const indexes = items.filter((a) => filterFunc(a[1], a[0])).map((item) => item[0]);
-    if (indexes.length === target.length)
-      return target;
-    send(baseKey, prop, [...indexes]);
-    applyIndexes(target, indexes);
-    return target;
-  };
-};
-const mapArrayMethods = (baseKey, target, prop) => {
-  return (...args) => {
-    const _args = args.map(toRaw);
-    if (prop === "remove" && Array.isArray(target)) {
-      const index = target.indexOf(_args[0]);
-      if (index < 0)
-        return;
-      target.splice(index, 1);
-      send(baseKey, "splice", index, 1);
-    }
-  };
-};
 const objects = /* @__PURE__ */ new Map();
 const subs = /* @__PURE__ */ new Map();
 electron.ipcMain.on("sync", (e, channel) => {
@@ -104,6 +90,9 @@ electron.ipcMain.on("sync", (e, channel) => {
   subs.set(e.sender.id, set);
   e.returnValue = objects.get(channel) || null;
 });
+const initSync = (baseKey, obj) => {
+  objects.set(baseKey[0], obj);
+};
 function* getObjectByBaseKey(baseKey) {
   let obj = objects.get(baseKey[0]);
   for (let i = 1; i < baseKey.length; i++) {
@@ -153,6 +142,39 @@ const sendOnNextTick = () => {
   flagNextTick = false;
   toSend = [];
 };
+const applyArrayMethods = (target, prop, baseKey) => {
+  const items = target.map((item, index) => [index, item]);
+  if (prop === "sort") {
+    return (sortFunc) => {
+      const indexes = items.sort((a, b) => sortFunc(a[1], b[1])).map((item) => item[0]);
+      if (isSorted(indexes))
+        return target;
+      send(baseKey, prop, [...indexes]);
+      applyIndexes(target, indexes);
+      return target;
+    };
+  }
+  return (filterFunc) => {
+    const indexes = items.filter((a) => filterFunc(a[1], a[0])).map((item) => item[0]);
+    if (indexes.length === target.length)
+      return target;
+    send(baseKey, prop, [...indexes]);
+    applyIndexes(target, indexes);
+    return target;
+  };
+};
+const mapArrayMethods = (baseKey, target, prop) => {
+  return (...args) => {
+    const _args = args.map(toRaw);
+    if (prop === "remove" && Array.isArray(target)) {
+      const index = target.indexOf(_args[0]);
+      if (index < 0)
+        return;
+      target.splice(index, 1);
+      send(baseKey, "splice", index, 1);
+    }
+  };
+};
 const toRaw = (obj) => {
   if (typeof obj !== "object" || obj === null)
     return obj;
@@ -170,7 +192,7 @@ const syncMain = (baseKey, obj) => {
   if (typeof obj !== "object" || obj === null)
     return obj;
   if (baseKey.length === 1) {
-    objects.set(baseKey[0], obj);
+    initSync(baseKey, obj);
   }
   return new Proxy(obj, {
     get(target, prop, receiver) {
@@ -213,6 +235,7 @@ const syncMain = (baseKey, obj) => {
     }
   });
 };
+exports.proxyMethodToWindow = proxyMethodToWindow;
 exports.proxyMethods = proxyMethods;
 exports.syncMain = syncMain;
 exports.toRaw = toRaw;

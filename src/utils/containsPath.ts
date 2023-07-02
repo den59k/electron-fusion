@@ -1,4 +1,4 @@
-import { BaseKey } from "../main/syncMain";
+import { BaseKey } from "../main/send";
 
 export const isSubPath = (baseKey: BaseKey, child: BaseKey ) => {
   

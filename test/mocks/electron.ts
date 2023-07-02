@@ -13,7 +13,8 @@ vi.mock("electron", async () => {
   const sender = { 
     id: 1, 
     isDestroyed: () => false, 
-    send: (channel: string, ...args: any[]) => rendererEmitter.emit(channel, {}, ...args.map(toJS))
+    send: (channel: string, ...args: any[]) => rendererEmitter.emit(channel, {}, ...args.map(toJS)),
+    once: vi.fn()
   }
 
   return {
