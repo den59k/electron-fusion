@@ -1,4 +1,4 @@
-import { applyArrayMethods, mapArrayMethods } from './arrayMethods'
+import { applyArrayMethods } from './arrayMethods'
 import { BaseKey, initSync, send } from './send'
 export { proxyMethods } from './proxyMethods'
 
@@ -16,6 +16,20 @@ const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   }
 }
 
+const returnMethods = [ "get", "find" ]
+const returnMethod = (baseKey: BaseKey, target: object, prop: string) => {
+  if (prop === "get" && target instanceof Map) {
+    return (key: string) => syncMain([ ...baseKey, key ], target.get(key))
+  }
+  if (prop === "find" && Array.isArray(target)) {
+    return (callback: (item: any) => boolean) => {
+      const index = target.findIndex(callback)
+      if (index < 0) return undefined
+      return syncMain([ ...baseKey, index ], target[index])
+    }
+  }
+}
+
 export const syncMain = <T extends object>(baseKey: BaseKey, obj: T): T => {
   if (typeof obj !== "object" || obj === null) return obj
   if (baseKey.length === 1) {
@@ -28,12 +42,8 @@ export const syncMain = <T extends object>(baseKey: BaseKey, obj: T): T => {
       if (prop === "__basekey__") return baseKey
       if (prop === "__isReactive__") return true
 
-      if ([ "sort", "_filter" ].includes(prop) && Array.isArray(target)) {
-        return applyArrayMethods(target, prop as "sort" | "_filter", baseKey)
-      }
-
-      if ([ "remove" ].includes(prop) && Array.isArray(target)) {
-        return mapArrayMethods(baseKey, target, prop)
+      if ([ "sort", "_filter", "remove" ].includes(prop) && Array.isArray(target)) {
+        return applyArrayMethods(target, prop as "sort" | "_filter" | "remove", baseKey)
       }
 
       const value = (target as any)[prop]
@@ -41,9 +51,10 @@ export const syncMain = <T extends object>(baseKey: BaseKey, obj: T): T => {
         if (mappedMethods.includes(prop)) {
           return mapMethod(baseKey, target, prop)
         }
-        if (target instanceof Map && prop === "get") {
-          return (key: string) => syncMain([ ...baseKey, key ], target.get(key))
+        if (returnMethods.includes(prop)) {
+          return returnMethod(baseKey, target, prop)
         }
+
         return value.bind(target)
       }
 

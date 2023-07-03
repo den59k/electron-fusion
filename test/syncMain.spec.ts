@@ -207,6 +207,33 @@ describe("test", async () => {
     expect(dataRenderer).toEqual(toJS(_data))
   })
 
+  it ("array get methods", async () => {
+    class Data {
+      objects: Array<{ prop: string }> = []
+    }
+    
+    const key = Symbol()
+    const _data = syncMain(["arrayGetMethods"], new Data())
+    const dataRenderer = syncRenderer<Data>("arrayGetMethods")
+
+    _data.objects.push({ prop: "a" }, { prop: "aa" }, { prop: "abb" })
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    const item = _data.objects.find(item => item.prop.startsWith("a"))!
+    item.prop = "a_edit"
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    const item2 = _data.objects.find(item => item.prop === "aa")!
+    item2.prop = "a_edit2"
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+    expect(dataRenderer.objects[1].prop).toBe("a_edit2")
+  })
+
   it("arrayFusion methods", async () => {
     class Data {
       numbers: Array<number> = []

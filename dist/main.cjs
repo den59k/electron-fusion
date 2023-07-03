@@ -144,6 +144,18 @@ const sendOnNextTick = () => {
   toSend = [];
 };
 const applyArrayMethods = (target, prop, baseKey) => {
+  if (prop === "remove") {
+    return (...args) => {
+      const _args = args.map(toRaw);
+      if (prop === "remove" && Array.isArray(target)) {
+        const index = target.indexOf(_args[0]);
+        if (index < 0)
+          return;
+        target.splice(index, 1);
+        send(baseKey, "splice", index, 1);
+      }
+    };
+  }
   const items = target.map((item, index) => [index, item]);
   if (prop === "sort") {
     return (sortFunc) => {
@@ -164,18 +176,6 @@ const applyArrayMethods = (target, prop, baseKey) => {
     return target;
   };
 };
-const mapArrayMethods = (baseKey, target, prop) => {
-  return (...args) => {
-    const _args = args.map(toRaw);
-    if (prop === "remove" && Array.isArray(target)) {
-      const index = target.indexOf(_args[0]);
-      if (index < 0)
-        return;
-      target.splice(index, 1);
-      send(baseKey, "splice", index, 1);
-    }
-  };
-};
 const toRaw = (obj) => {
   if (typeof obj !== "object" || obj === null)
     return obj;
@@ -188,6 +188,20 @@ const mapMethod = (baseKey, target, prop) => {
     target[prop](..._args);
     send(baseKey, prop, ..._args);
   };
+};
+const returnMethods = ["get", "find"];
+const returnMethod = (baseKey, target, prop) => {
+  if (prop === "get" && target instanceof Map) {
+    return (key) => syncMain([...baseKey, key], target.get(key));
+  }
+  if (prop === "find" && Array.isArray(target)) {
+    return (callback) => {
+      const index = target.findIndex(callback);
+      if (index < 0)
+        return void 0;
+      return syncMain([...baseKey, index], target[index]);
+    };
+  }
 };
 const syncMain = (baseKey, obj) => {
   if (typeof obj !== "object" || obj === null)
@@ -203,19 +217,16 @@ const syncMain = (baseKey, obj) => {
         return baseKey;
       if (prop === "__isReactive__")
         return true;
-      if (["sort", "_filter"].includes(prop) && Array.isArray(target)) {
+      if (["sort", "_filter", "remove"].includes(prop) && Array.isArray(target)) {
         return applyArrayMethods(target, prop, baseKey);
-      }
-      if (["remove"].includes(prop) && Array.isArray(target)) {
-        return mapArrayMethods(baseKey, target, prop);
       }
       const value = target[prop];
       if (typeof value === "function") {
         if (mappedMethods.includes(prop)) {
           return mapMethod(baseKey, target, prop);
         }
-        if (target instanceof Map && prop === "get") {
-          return (key) => syncMain([...baseKey, key], target.get(key));
+        if (returnMethods.includes(prop)) {
+          return returnMethod(baseKey, target, prop);
         }
         return value.bind(target);
       }
