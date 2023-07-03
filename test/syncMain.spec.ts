@@ -212,7 +212,6 @@ describe("test", async () => {
       objects: Array<{ prop: string }> = []
     }
     
-    const key = Symbol()
     const _data = syncMain(["arrayGetMethods"], new Data())
     const dataRenderer = syncRenderer<Data>("arrayGetMethods")
 
@@ -232,6 +231,11 @@ describe("test", async () => {
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
     expect(dataRenderer.objects[1].prop).toBe("a_edit2")
+    
+    _data.objects.forEach(item => item.prop = "end")
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
   })
 
   it("arrayFusion methods", async () => {

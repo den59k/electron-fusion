@@ -189,7 +189,7 @@ const mapMethod = (baseKey, target, prop) => {
     send(baseKey, prop, ..._args);
   };
 };
-const returnMethods = ["get", "find"];
+const returnMethods = ["get", "find", "forEach"];
 const returnMethod = (baseKey, target, prop) => {
   if (prop === "get" && target instanceof Map) {
     return (key) => syncMain([...baseKey, key], target.get(key));
@@ -200,6 +200,11 @@ const returnMethod = (baseKey, target, prop) => {
       if (index < 0)
         return void 0;
       return syncMain([...baseKey, index], target[index]);
+    };
+  }
+  if (prop === "forEach" && Array.isArray(target)) {
+    return (callback) => {
+      return target.forEach((value, index, array) => callback(syncMain([...baseKey, index], value), index, array));
     };
   }
 };

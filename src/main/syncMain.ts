@@ -16,7 +16,7 @@ const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   }
 }
 
-const returnMethods = [ "get", "find" ]
+const returnMethods = [ "get", "find", "forEach" ]
 const returnMethod = (baseKey: BaseKey, target: object, prop: string) => {
   if (prop === "get" && target instanceof Map) {
     return (key: string) => syncMain([ ...baseKey, key ], target.get(key))
@@ -26,6 +26,11 @@ const returnMethod = (baseKey: BaseKey, target: object, prop: string) => {
       const index = target.findIndex(callback)
       if (index < 0) return undefined
       return syncMain([ ...baseKey, index ], target[index])
+    }
+  }
+  if (prop === "forEach" && Array.isArray(target)) {
+    return (callback: (item: any, index: number, array: any) => void) => {
+      return target.forEach((value, index, array) => callback(syncMain([ ...baseKey, index ], value), index, array))
     }
   }
 }
