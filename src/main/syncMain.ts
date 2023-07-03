@@ -2,9 +2,9 @@ import { applyArrayMethods } from './arrayMethods'
 import { BaseKey, initSync, send } from './send'
 export { proxyMethods } from './proxyMethods'
 
-export const toRaw = (obj: any) => {
+export const toRaw = <T extends object>(obj: T) => {
   if (typeof obj !== "object" || obj === null) return obj
-  return obj.__isReactive__? obj.__raw__: obj
+  return "__raw__" in obj? (obj.__raw__ as T): obj
 }
 
 const mappedMethods = [ "add", "set", "push", "unshift", "splice", "clear", "delete", "remove" ]

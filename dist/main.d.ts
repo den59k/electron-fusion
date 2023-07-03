@@ -18,6 +18,6 @@ export declare const proxyMethods: (service: object, channel: string, webContent
 
 export declare const syncMain: <T extends object>(baseKey: BaseKey, obj: T) => T;
 
-export declare const toRaw: (obj: any) => any;
+export declare const toRaw: <T extends object>(obj: T) => T;
 
 export { }
