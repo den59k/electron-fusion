@@ -232,9 +232,22 @@ describe("test", async () => {
     expect(dataRenderer).toEqual(toJS(_data))
     expect(dataRenderer.objects[1].prop).toBe("a_edit2")
     
-    _data.objects.forEach(item => item.prop = "end")
+    _data.objects.forEach((item, index) => item.prop = "end"+index)
 
     await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    const items = _data.objects.slice(1)
+    items[0].prop = "start"
+    items[1].prop = "staaart"
+    await new Promise(res => nextTick(res))
+    expect(items).toHaveLength(2)
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    const items2 = _data.objects.slice(-1)
+    items2[0].prop = "last item"
+    await new Promise(res => nextTick(res))
+    expect(items2).toHaveLength(1)
     expect(dataRenderer).toEqual(toJS(_data))
   })
 

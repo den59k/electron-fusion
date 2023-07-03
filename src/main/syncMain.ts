@@ -16,7 +16,7 @@ const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   }
 }
 
-const returnMethods = [ "get", "find", "forEach" ]
+const returnMethods = [ "get", "find", "forEach", "slice" ]
 const returnMethod = (baseKey: BaseKey, target: object, prop: string) => {
   if (prop === "get" && target instanceof Map) {
     return (key: string) => syncMain([ ...baseKey, key ], target.get(key))
@@ -31,6 +31,12 @@ const returnMethod = (baseKey: BaseKey, target: object, prop: string) => {
   if (prop === "forEach" && Array.isArray(target)) {
     return (callback: (item: any, index: number, array: any) => void) => {
       return target.forEach((value, index, array) => callback(syncMain([ ...baseKey, index ], value), index, array))
+    }
+  }
+  if (prop === "slice" && Array.isArray(target)) {
+    return (start: number = 0, end: number | undefined) => {
+      if (start < 0) start = target.length + start
+      return target.slice(start, end).map((item, index) => syncMain([ ...baseKey, start+index ], item))
     }
   }
 }
