@@ -4,7 +4,7 @@ export { proxyMethods } from './proxyMethods'
 
 export const toRaw = <T extends object>(obj: T) => {
   if (typeof obj !== "object" || obj === null) return obj
-  return "__raw__" in obj? (obj.__raw__ as T): obj
+  return ((obj as any).__raw__ as T) ?? obj
 }
 
 const mappedMethods = [ "add", "set", "push", "unshift", "splice", "clear", "delete", "remove" ]

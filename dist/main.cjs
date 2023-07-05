@@ -179,7 +179,7 @@ const applyArrayMethods = (target, prop, baseKey) => {
 const toRaw = (obj) => {
   if (typeof obj !== "object" || obj === null)
     return obj;
-  return "__raw__" in obj ? obj.__raw__ : obj;
+  return obj.__raw__ ?? obj;
 };
 const mappedMethods = ["add", "set", "push", "unshift", "splice", "clear", "delete", "remove"];
 const mapMethod = (baseKey, target, prop) => {
