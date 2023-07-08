@@ -285,5 +285,63 @@ describe("test", async () => {
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
   })
+
+  it ("array iterators", async () => {
+    class Data {
+      objects: Array<{ prop: string }> = []
+    }
+    const _data = syncMain(["test10"], new Data())
+    _data.objects.push({ prop: "one" }, { prop: "two" }, { prop: "three" })
+    
+    const dataRenderer = syncRenderer<Data>("test10")
+    
+    expect(dataRenderer).toEqual(toJS(_data))
+    expect(dataRenderer).not.toBe(_data)
+    
+    await new Promise(res => nextTick(res))
+    let i = 0;
+    for (let obj of _data.objects) {
+      obj.prop = `prop ${i}`
+      i++
+    }
+    
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
+
+  it ("map iterators", async () => {
+    class Data {
+      map = new Map<string, { prop: string }>()
+    }
+
+    const _data = syncMain(["test11"], new Data())
+    
+    const dataRenderer = syncRenderer<Data>("test11")
+    
+    await new Promise(res => nextTick(res))
+    
+    _data.map.set("one", { prop: "one" })
+    _data.map.set("two", { prop: "two" })
+    _data.map.set("three", { prop: "three" })
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    for (var [ key, value ] of _data.map.entries()) {
+      value.prop = key + " another prop"
+    }
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+
+    let index = 0
+    for (var value of _data.map.values()) {
+      value.prop = index + " another prop"
+      index++
+    }
+
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
+  })
 })
 

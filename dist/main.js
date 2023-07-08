@@ -1,4 +1,5 @@
 import { ipcMain, webContents } from "electron";
+import { nextTick } from "process";
 const services = /* @__PURE__ */ new Map();
 const windows = /* @__PURE__ */ new Map();
 const getTarget = (e, channel) => {
@@ -85,8 +86,10 @@ const objects = /* @__PURE__ */ new Map();
 const subs = /* @__PURE__ */ new Map();
 ipcMain.on("sync", (e, channel) => {
   const set = subs.get(e.sender.id) || /* @__PURE__ */ new Set();
-  set.add(channel);
   subs.set(e.sender.id, set);
+  nextTick(() => {
+    set.add(channel);
+  });
   e.returnValue = objects.get(channel) || null;
 });
 const initSync = (baseKey, obj) => {
@@ -122,7 +125,7 @@ const send = (baseKey, command, ...args) => {
   }
   toSend.push([baseKey, command, ...args]);
   if (!flagNextTick) {
-    process.nextTick(sendOnNextTick);
+    nextTick(sendOnNextTick);
     flagNextTick = true;
   }
 };
@@ -187,7 +190,7 @@ const mapMethod = (baseKey, target, prop) => {
     send(baseKey, prop, ..._args);
   };
 };
-const returnMethods = ["get", "find", "forEach", "slice"];
+const returnMethods = ["get", "find", "forEach", "slice", Symbol.iterator, "values", "entries"];
 const returnMethod = (baseKey, target, prop) => {
   if (prop === "get" && target instanceof Map) {
     return (key) => syncMain([...baseKey, key], target.get(key));
@@ -210,6 +213,39 @@ const returnMethod = (baseKey, target, prop) => {
       if (start < 0)
         start = target.length + start;
       return target.slice(start, end).map((item, index) => syncMain([...baseKey, start + index], item));
+    };
+  }
+  if (prop === Symbol.iterator || (prop === "values" || prop === "entries") && target instanceof Map) {
+    return () => {
+      const innerIterator = target[Symbol.iterator]();
+      if (target instanceof Map) {
+        const values = prop === "values";
+        const iterator = {
+          next: () => {
+            const { done, value } = innerIterator.next();
+            if (done)
+              return { done, value: void 0 };
+            const _value = syncMain([...baseKey, value[0]], value[1]);
+            return {
+              value: values ? _value : [value[0], _value],
+              done
+            };
+          }
+        };
+        if (prop === Symbol.iterator)
+          return iterator;
+        return { [Symbol.iterator]: () => iterator };
+      }
+      let index = 0;
+      return {
+        next: () => {
+          const { done, value } = innerIterator.next();
+          return {
+            done,
+            value: syncMain([...baseKey, index++], value)
+          };
+        }
+      };
     };
   }
 };

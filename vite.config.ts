@@ -23,7 +23,7 @@ export default defineConfig({
       name: '[name]',
     },
     rollupOptions: {
-      external: ['electron'],
+      external: ['electron', 'process'],
       output: {
         manualChunks: {}
       },

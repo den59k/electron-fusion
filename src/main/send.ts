@@ -1,4 +1,5 @@
 import { ipcMain, webContents } from 'electron'
+import { nextTick } from 'process'
 export { proxyMethods } from './proxyMethods'
 
 const objects = new Map<string | number, object>()
@@ -8,8 +9,11 @@ export type BaseKey = (string | number)[]
 
 ipcMain.on("sync", (e, channel: string) => {
   const set = subs.get(e.sender.id) || new Set()
-  set.add(channel)
   subs.set(e.sender.id, set)
+  // Here we use nextTick so that the methods on hold will not apply to the data just passed
+  nextTick(() => { 
+    set.add(channel)
+  })
   e.returnValue = objects.get(channel) || null
 })
 
@@ -46,7 +50,7 @@ export const send = (baseKey: BaseKey, command: string, ...args: any) => {
 
   toSend.push([ baseKey, command, ...args ])
   if (!flagNextTick) {
-    process.nextTick(sendOnNextTick)
+    nextTick(sendOnNextTick)
     flagNextTick = true
   }
 }
