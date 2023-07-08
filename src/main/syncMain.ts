@@ -2,7 +2,7 @@ import { applyArrayMethods } from './arrayMethods'
 import { BaseKey, initSync, send } from './send'
 export { proxyMethods } from './proxyMethods'
 
-export const toRaw = <T extends object>(obj: T) => {
+export const toRaw = <T>(obj: T) => {
   if (typeof obj !== "object" || obj === null) return obj
   return ((obj as any).__raw__ as T) ?? obj
 }
