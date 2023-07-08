@@ -1,6 +1,6 @@
 {
   "name": "electron-fusion",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "type": "module",
   "license": "MIT",
   "description": "Tool for fusing data between the main and renderer processes",
