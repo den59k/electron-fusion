@@ -120,6 +120,11 @@ describe("test", async () => {
     expect(_data.array).toEqual([ 50 ])
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
+    
+    array.shift()
+    array.pop()
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer).toEqual(toJS(_data))
   })
 
   it("inner map test", async () => {
@@ -141,7 +146,7 @@ describe("test", async () => {
 
   it("inner array test", async () => {
     class Data {
-      array: any[] = []
+      array: { item: string }[][] = []
     }
   
     const _data = syncMain(["test6"], new Data())
@@ -161,6 +166,12 @@ describe("test", async () => {
     await new Promise(res => nextTick(res))
     expect(dataRenderer.array[0].length).toBe(2)
     expect(dataRenderer).toEqual(toJS(_data))
+
+    _data.array.at(-1)?.push({ item: "last item" })
+    await new Promise(res => nextTick(res))
+    expect(dataRenderer.array[1].length).toBe(2)
+    expect(dataRenderer).toEqual(toJS(_data))
+
   })
 
 

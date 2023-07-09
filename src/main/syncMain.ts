@@ -7,7 +7,7 @@ export const toRaw = <T>(obj: T) => {
   return ((obj as any).__raw__ as T) ?? obj
 }
 
-const mappedMethods = [ "add", "set", "push", "unshift", "splice", "clear", "delete", "remove" ]
+const mappedMethods = [ "add", "set", "push", "unshift", "splice", "clear", "delete", "remove", "shift", "pop", "reverse" ]
 const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   return (...args: any) => {
     const _args = args.map(toRaw)
@@ -16,10 +16,16 @@ const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   }
 }
 
-const returnMethods = [ "get", "find", "forEach", "slice", Symbol.iterator, "values", "entries" ]
+const returnMethods = [ "get", "at", "find", "forEach", "slice", Symbol.iterator, "values", "entries" ]
 const returnMethod = (baseKey: BaseKey, target: object, prop: string | Symbol) => {
   if (prop === "get" && target instanceof Map) {
     return (key: string) => syncMain([ ...baseKey, key ], target.get(key))
+  }
+  if (prop === "at" && Array.isArray(target)) {
+    return (index: number) => {
+      if (index < 0) index = target.length + index
+      return syncMain([ ...baseKey, index ], target[index])
+    }
   }
   if (prop === "find" && Array.isArray(target)) {
     return (callback: (item: any) => boolean) => {

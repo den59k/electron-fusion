@@ -182,7 +182,7 @@ const toRaw = (obj) => {
     return obj;
   return obj.__raw__ ?? obj;
 };
-const mappedMethods = ["add", "set", "push", "unshift", "splice", "clear", "delete", "remove"];
+const mappedMethods = ["add", "set", "push", "unshift", "splice", "clear", "delete", "remove", "shift", "pop", "reverse"];
 const mapMethod = (baseKey, target, prop) => {
   return (...args) => {
     const _args = args.map(toRaw);
@@ -190,10 +190,17 @@ const mapMethod = (baseKey, target, prop) => {
     send(baseKey, prop, ..._args);
   };
 };
-const returnMethods = ["get", "find", "forEach", "slice", Symbol.iterator, "values", "entries"];
+const returnMethods = ["get", "at", "find", "forEach", "slice", Symbol.iterator, "values", "entries"];
 const returnMethod = (baseKey, target, prop) => {
   if (prop === "get" && target instanceof Map) {
     return (key) => syncMain([...baseKey, key], target.get(key));
+  }
+  if (prop === "at" && Array.isArray(target)) {
+    return (index) => {
+      if (index < 0)
+        index = target.length + index;
+      return syncMain([...baseKey, index], target[index]);
+    };
   }
   if (prop === "find" && Array.isArray(target)) {
     return (callback) => {
