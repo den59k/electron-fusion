@@ -121,10 +121,11 @@ describe("test", async () => {
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
     
+    const lastItem = array.pop()
     array.shift()
-    array.pop()
     await new Promise(res => nextTick(res))
     expect(dataRenderer).toEqual(toJS(_data))
+    expect(lastItem).toEqual(50)
   })
 
   it("inner map test", async () => {

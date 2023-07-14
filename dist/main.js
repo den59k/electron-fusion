@@ -186,8 +186,9 @@ const mappedMethods = ["add", "set", "push", "unshift", "splice", "clear", "dele
 const mapMethod = (baseKey, target, prop) => {
   return (...args) => {
     const _args = args.map(toRaw);
-    target[prop](..._args);
+    const resp = target[prop](..._args);
     send(baseKey, prop, ..._args);
+    return resp;
   };
 };
 const returnMethods = ["get", "at", "find", "forEach", "slice", Symbol.iterator, "values", "entries"];

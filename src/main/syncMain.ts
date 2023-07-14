@@ -11,8 +11,9 @@ const mappedMethods = [ "add", "set", "push", "unshift", "splice", "clear", "del
 const mapMethod = (baseKey: BaseKey, target: any, prop: string) => {
   return (...args: any) => {
     const _args = args.map(toRaw)
-    target[prop](..._args)
+    const resp = target[prop](..._args)
     send(baseKey, prop, ..._args)
+    return resp
   }
 }
 
